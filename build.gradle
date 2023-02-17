@@ -1,0 +1,282 @@
+//plugins {
+//    id 'java'
+//    id 'application'
+//    id 'org.openjfx.javafxplugin' version '0.0.13'
+//    id 'org.beryx.jlink' version '2.25.0'
+//}
+//
+//group 'ru.kutsnikita.wikisearch'
+//version '1.0-SNAPSHOT'
+//
+//repositories {
+//    mavenCentral()
+//}
+//
+//ext {
+//    junitVersion = '5.9.1'
+//}
+//
+//sourceCompatibility = '11'
+//targetCompatibility = '11'
+//
+//tasks.withType(JavaCompile) {
+//    options.encoding = 'UTF-8'
+//}
+//
+//application {
+//    mainModule = 'ru.kutsnikita.wikisearch.wikisearch'
+//    mainClass = 'ru.kutsnikita.wikisearch.wikisearch.HelloApplication'
+//}
+//
+//javafx {
+//    version = '17.0.2'
+//    modules = ['javafx.controls', 'javafx.fxml']
+//}
+//
+//dependencies {
+//
+//    testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
+//    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+//}
+//
+//test {
+//    useJUnitPlatform()
+//}
+//
+//jlink {
+//    imageZip = project.file("${buildDir}/distributions/app-${javafx.platform.classifier}.zip")
+//    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+//    launcher {
+//        name = 'app'
+//    }
+//}
+//
+//jlinkZip {
+//    group = 'distribution'
+//}
+buildscript{
+    apply from: 'version.gradle'
+
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        mavenLocal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+        classpath("org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${versions.springBoot}")
+        classpath("io.spring.gradle:dependency-management-plugin:${versions.springDependencyManagementPlugin}")
+        classpath("org.jetbrains.kotlin:kotlin-allopen:$kotlin_version")
+        classpath("com.gorylenko.gradle-git-properties:gradle-git-properties:2.4.1")
+    }
+}
+
+plugins {
+    id 'java'
+    id "org.openapi.generator" version "6.2.1"
+    id 'org.springframework.boot' version '2.6.8' apply false
+    id 'maven-publish'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE' apply false
+    id 'com.gorylenko.gradle-git-properties' version '2.4.1' apply false
+}
+apply plugin: 'io.spring.dependency-management'
+
+ext {
+    repository_username = System.env.CI_REPOSITORY_USERNAME
+    repository_password = System.env.CI_REPOSITORY_PASSWORD
+    releases_repo_url = System.env.CI_REPOSITORY_RELEASES
+    snapshots_repo_url = System.env.CI_REPOSITORY_SNAPSHOTS
+}
+
+group 'ru.kutsnikita.wikisearch'
+version '1.0-SNAPSHOT'
+
+allprojects {
+    project.version = rootProject.version
+
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        mavenCentral()
+        mavenLocal()
+    }
+}
+
+subprojects {
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'java'
+    apply plugin: "maven-publish"
+    apply plugin: "com.gorylenko.gradle-git-properties"
+    dependencyManagement {
+        dependencies {
+            dependency("org.mapstruct:mapstruct:${versions.mapstruct}")
+            dependency("org.mapstruct:mapstruct-jdk8:${versions.mapstruct}")
+            dependency("org.mapstruct:mapstruct-processor:${versions.mapstruct}")
+            dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4'
+            dependency("org.hibernate.validator:hibernate-validator:${versions.hibernate}")
+        }
+    }
+}
+
+configure(subprojects) {
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'java'
+    apply plugin: "maven-publish"
+
+    group 'ru.kutsnikita.wikisearch'
+
+    def commonCompilerArgs =
+            ["-parameters", "-Xlint:dep-ann",
+             "-Xlint:divzero", "-Xlint:empty", "-Xlint:finally", "-Xlint:overrides",
+             "-Xlint:path", "-Xlint:-processing", "-Xlint:static", "-Xlint:try", "-Xlint:-options"]
+
+    compileJava.options*.compilerArgs = commonCompilerArgs +
+            ["-Xlint:varargs", "-Xlint:fallthrough",
+             "-Xlint:deprecation", "-Xlint:unchecked"]
+
+    compileTestJava.options*.compilerArgs = commonCompilerArgs +
+            ["-Xlint:-varargs", "-Xlint:-fallthrough", "-Xlint:-rawtypes",
+             "-Xlint:-deprecation", "-Xlint:-unchecked"]
+
+    compileJava {
+        sourceCompatibility = 11
+        targetCompatibility = 11
+        options.encoding = 'UTF-8'
+    }
+
+    compileTestJava {
+        sourceCompatibility = 11
+        targetCompatibility = 11
+        options.encoding = 'UTF-8'
+    }
+    dependencies {
+        compileOnly("org.projectlombok:lombok:${versions.lombok}")
+        annotationProcessor("org.projectlombok:lombok:${versions.lombok}")
+        testCompileOnly("org.projectlombok:lombok:${versions.lombok}")
+        testAnnotationProcessor("org.projectlombok:lombok:${versions.lombok}")
+
+        testImplementation("org.springframework.boot:spring-boot-starter-test:${versions.springBoot}")
+
+    }
+}
+
+configure(project(':api')) {
+    apply plugin: "java"
+    apply plugin: "maven-publish"
+    apply plugin: "org.springframework.boot"
+    apply plugin: "org.openapi.generator"
+    apply plugin: "io.spring.dependency-management"
+    jar {
+        archiveClassifier = ""
+    }
+
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+    compileJava.dependsOn tasks.openApiGenerate
+
+    dependencies {
+        implementation "org.springframework.boot:spring-boot-starter-web:${versions.springBoot}"
+        implementation "org.springframework.boot:spring-boot-starter-validation:${versions.springBoot}"
+
+        implementation 'io.springfox:springfox-oas:3.0.0'
+        implementation 'io.springfox:springfox-swagger-ui:3.0.0'
+
+        implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
+        implementation 'org.openapitools:jackson-databind-nullable:0.2.2'
+
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    }
+
+    openApiGenerate {
+        generatorName = "spring"
+        inputSpec = "$projectDir/src/main/resources/openapi.yaml".toString()
+        outputDir = "$buildDir/generated".toString()
+        apiPackage = "ru.kutsnikita.wikisearch.api"
+        invokerPackage = "ru.kutsnikita.wikisearch.api"
+        modelPackage = "ru.kutsnikita.wikisearch.api.model"
+        library = "spring-boot"
+        version = "${rootProject.version}"
+        group = "ru.kutsnikita.wikisearch"
+        configOptions = [
+                dateLibrary                : "java8",
+                skipDefaultInterface       : "true",
+                interfaceOnly              : "true",
+                useTags                    : "true",
+                oas3                       : "true",
+                legacyDiscriminatorBehavior: "false"
+        ]
+    }
+    sourceSets {
+        main {
+            java {
+                srcDir(files("${openApiGenerate.outputDir.get()}/src/main/java"))
+            }
+        }
+    }
+
+    tasks {
+        bootJar.enabled(false)
+        bootRun.enabled(false)
+//        jar.enabled(true)
+    }
+}
+
+configure(project(':app')) {
+    apply plugin: 'kotlin'
+    apply plugin: "kotlin-spring"
+    apply plugin: "org.springframework.boot"
+
+    dependencies {
+        annotationProcessor "org.springframework.boot:spring-boot-autoconfigure-processor:${versions.springBoot}"
+        annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:${versions.springBoot}"
+        implementation("org.springframework.boot:spring-boot-autoconfigure:${versions.springBoot}")
+        implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+        implementation("org.springframework.boot:spring-boot-starter-undertow:${versions.springBoot}")
+        implementation("org.springframework.boot:spring-boot-starter-aop:${versions.springBoot}")
+        implementation("org.springframework.boot:spring-boot-starter-web:${versions.springBoot}")
+        implementation "org.springframework.cloud:spring-cloud-starter-consul-config:${versions.springCloud}"
+        implementation 'org.springframework.cloud:spring-cloud-starter-consul-discovery:3.1.1'
+        implementation 'org.springframework.boot:spring-boot-starter-actuator:2.6.7'
+        implementation('org.hibernate.validator:hibernate-validator')
+        implementation('com.fasterxml.jackson.module:jackson-module-parameter-names')
+        implementation('com.fasterxml.jackson.datatype:jackson-datatype-jdk8')
+        implementation('com.fasterxml.jackson.datatype:jackson-datatype-jsr310')
+        implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+        implementation('com.fasterxml.jackson.module:jackson-module-kotlin:2.10.2')
+        implementation('org.springframework.boot:spring-boot-starter-data-jpa') {
+            exclude group: "org.apache.tomcat", module: "tomcat-jdbc" //to make use of Hikari
+        }
+        implementation 'org.passay:passay:1.6.2'
+        //db
+        implementation "com.zaxxer:HikariCP:${versions.hikari}"
+        implementation 'org.postgresql:postgresql:42.3.4'
+        implementation "org.springframework.boot:spring-boot-starter-data-jdbc:${versions.springBoot}"
+        implementation "org.flywaydb:flyway-core:${versions.flyway}"
+
+        implementation(project(':api'))
+    }
+
+    bootJar {
+        mainClass = 'ru.kutsnikita.wikisearch.Main'
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    jar {
+        enabled = false
+    }
+
+}
+
+
+
+
+
