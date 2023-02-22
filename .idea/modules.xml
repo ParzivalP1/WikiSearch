@@ -3,7 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/api/WikiSearch.api.main.iml" filepath="$PROJECT_DIR$/.idea/modules/api/WikiSearch.api.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/api/ru.kutsnikita.wikisearch.WikiSearch.api.main.iml" filepath="$PROJECT_DIR$/.idea/modules/api/ru.kutsnikita.wikisearch.WikiSearch.api.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/WikiSearch.app.main.iml" filepath="$PROJECT_DIR$/.idea/modules/app/WikiSearch.app.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/api/ru.kutsnikita.ws.WikiSearch.api.main.iml" filepath="$PROJECT_DIR$/.idea/modules/api/ru.kutsnikita.ws.WikiSearch.api.main.iml" />
     </modules>
   </component>
 </project>
