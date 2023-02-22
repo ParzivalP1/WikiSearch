@@ -1,0 +1,37 @@
+openapi: 3.0.3
+info:
+  title: SubjectsService
+  description: API
+  version: 1.0.0
+paths:
+  /find:
+    get:
+      operationId: findPath
+      parameters:
+        - in: query
+          name: src
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: dst
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: path found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example:
+                - "https://ru.wikipedia.org/wiki/%D0%97%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0"
+                - "https://ru.wikipedia.org/wiki/%D0%97%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0"
+                - "https://ru.wikipedia.org/wiki/%D0%97%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0"
+        400:
+          description: Src or dst not found
+        404:
+          description: Path not found
